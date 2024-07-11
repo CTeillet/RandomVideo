@@ -1,0 +1,75 @@
+@page "/video"
+@rendermode InteractiveServer
+
+<PageTitle>Video</PageTitle>
+
+<h1>Video</h1>
+
+<div>
+    <button class="btn btn-primary" @onclick="LoadVideos">Load Videos</button>
+</div>
+
+<a>@currentVideo</a>
+
+<div class="mt-3">
+    @if (videos == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (videos.Count == 0)
+    {
+        <p>No videos found.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var video in videos)
+            {
+                <li>
+                    <button @onclick='() => PlayVideo(video)'>@video</button>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<div class="mt-3">
+    @if (!string.IsNullOrEmpty(currentVideo))
+    {
+        <video @ref="videoPlayer" width="640" height="480" controls key="@currentVideo">
+            <source src="@currentVideo" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    }
+</div>
+
+@code {
+    private List<string> videos;
+    private string currentVideo;
+    private ElementReference videoPlayer;
+    
+    [Inject]
+    private HttpClient HttpClient { get; set; }
+    
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVideos();
+    }
+
+    private async Task LoadVideos()
+    {
+        Console.WriteLine("Chargement des vidéos");
+        var response = await HttpClient.GetFromJsonAsync<List<string>>("/api/video");
+        videos = response ?? new List<string>();
+    }
+
+    private async Task PlayVideo(string video)
+    {
+        currentVideo = $"/api/video/{Uri.EscapeDataString(video)}";
+        await Task.Delay(50);
+        await JSRuntime.InvokeVoidAsync("reloadVideo", videoPlayer);
+    }
+}

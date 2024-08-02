@@ -11,37 +11,37 @@
 </div>
 
 <div class="mt-3">
-    @if (_videos.Count==0)
+    @if (_videos.Count == 0)
     {
-    <p>Loading...</p>
+        <p>Loading...</p>
     }
     else if (_videos.Count == 0)
     {
-    <p>No videos found.</p>
+        <p>No videos found.</p>
     }
     else
     {
-    <div class="video-grid">
-        @foreach (var video in _videos)
-        {
-        <div class="video-card">
-            <div class="video-title">@video.Name</div>
-            <div class="video-thumbnail">
-                <img src="@video.Thumbnail" @onclick='() => PlayVideo(video)' alt="@video.Name"/>
-            </div>
+        <div class="video-grid">
+            @foreach (var video in _videos)
+            {
+                <div class="video-card">
+                    <div class="video-title">@video.Name</div>
+                    <div class="video-thumbnail">
+                        <img src="@video.Thumbnail.FilepathDisplay" @onclick='() => PlayVideo(video)' alt="@video.Name"/>
+                    </div>
+                </div>
+            }
         </div>
-        }
-    </div>
     }
 </div>
 
 <div class="mt-3">
     @if (!string.IsNullOrEmpty(_currentVideo))
     {
-    <video @ref="_videoPlayer" width="640" height="480" controls key="@_currentVideo">
-        <source src="@_currentVideo" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+        <video @ref="_videoPlayer" width="640" height="480" controls key="@_currentVideo">
+            <source src="@_currentVideo" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     }
 </div>
 
@@ -79,32 +79,31 @@
 </style>
 
 @code {
-private List<Video> _videos = [];
-private string _currentVideo = "";
-private ElementReference _videoPlayer;
+    private List<Video> _videos = [];
+    private string _currentVideo = "";
+    private ElementReference _videoPlayer;
 
-[Inject]
-private HttpClient HttpClient { get; set; }
+    [Inject] private HttpClient HttpClient { get; set; }
 
-[Inject]
-private IJSRuntime JSRuntime { get; set; }
+    [Inject] private IJSRuntime JSRuntime { get; set; }
 
-protected override async Task OnInitializedAsync()
-{
-await LoadVideos();
-}
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVideos();
+    }
 
-private async Task LoadVideos()
-{
-Console.WriteLine("Chargement des vidéos");
-var response = await HttpClient.GetFromJsonAsync<List<Video>>("/api/video");
-_videos = response ?? [];
-}
+    private async Task LoadVideos()
+    {
+        Console.WriteLine("Chargement des vidéos");
+        var response = await HttpClient.GetFromJsonAsync<List<Video>>("/api/video");
+        _videos = response ?? [];
+    }
 
-private async Task PlayVideo(Video video)
-{
-_currentVideo = $"/api/video/{Uri.EscapeDataString(video.Name)}";
-await Task.Delay(50);
-await JSRuntime.InvokeVoidAsync("reloadVideo", _videoPlayer);
-}
+    private async Task PlayVideo(Video video)
+    {
+        _currentVideo = $"/api/video/{Uri.EscapeDataString(video.Name)}";
+        await Task.Delay(50);
+        await JSRuntime.InvokeVoidAsync("reloadVideo", _videoPlayer);
+    }
+
 }

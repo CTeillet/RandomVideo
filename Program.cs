@@ -1,4 +1,5 @@
 using RandomVideo.Components;
+using RandomVideo.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddEndpointsApiExplorer();
 // Ajouter les services nécessaires.
 builder.Configuration.AddJsonFile("appsettings.json");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseUrl"]) });
+builder.Services.AddSingleton<IVideoThumbnailGenerator>(provider =>
+    new VideoThumbnailGenerator());
+builder.Services.AddSingleton<IListVideo>(provider =>
+    new ListVideo(builder.Configuration["PathVideoDirectory"],builder.Configuration["PathThumbnailDirectory"] ));
 
 
 var app = builder.Build();

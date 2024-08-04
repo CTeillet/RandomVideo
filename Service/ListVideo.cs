@@ -2,14 +2,15 @@ using RandomVideo.Models;
 
 namespace RandomVideo.Service;
 
-public class ListVideo(string videoDirectory, string thumbnailDirectory) : IListVideo
+public class ListVideo(string videoDirectory, string thumbnailDirectory, ILogger<ListVideo> logger)
+    : IListVideo
 {
     private readonly HashSet<string> _videoExtensions =
         [".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".m4v"];
 
     public List<Video> GetVideos()
     {
-        Console.Out.WriteLine("Récupération de la liste des vidéos");
+        logger.LogInformation("Récupération de la liste des vidéos");
 
         var videos = Directory.EnumerateFiles(videoDirectory, "*.*", SearchOption.AllDirectories)
             .Where(file => _videoExtensions.Contains(Path.GetExtension(file).ToLower()))

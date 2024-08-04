@@ -7,13 +7,16 @@ namespace RandomVideo.Service;
 
 public class VideoThumbnailGenerator : IVideoThumbnailGenerator
 {
-    public VideoThumbnailGenerator()
+    private readonly ILogger<VideoThumbnailGenerator> _logger;
+    
+    public VideoThumbnailGenerator(ILogger<VideoThumbnailGenerator> logger)
     {
         // Ensure the FFmpeg executables are downloaded
         var directoryWithFFmpegAndFFprobe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "FFmpeg");
         FFmpeg.SetExecutablesPath(directoryWithFFmpegAndFFprobe);
         FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, directoryWithFFmpegAndFFprobe).Wait();
+        _logger = logger;
     }
 
     public async Task GenerateThumbnailsAsync(List<Video> videos)
@@ -48,7 +51,7 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
 
     private async Task GenerateThumbnailAsync(Video video)
     {
-        Console.WriteLine($"Génération de la vignette pour la vidéo : {video.Name}, {video.Path}, {video.Thumbnail}");
+        _logger.LogInformation("Génération de la vignette pour la vidéo : {videoName}, {videoPath}, {videoThumbnail}", video.Name, video.Path, video.Thumbnail);
         
         var conversion = FFmpeg.Conversions.New()
             .AddParameter($"-i \"{video.Path}\"")
@@ -58,6 +61,6 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
 
         await conversion.Start();
         
-        Console.WriteLine($"Fin de génération de la vignette pour la vidéo : {video.Name}");
+        _logger.LogInformation("Fin de génération de la vignette pour la vidéo : {videoName}", video.Name);
     }
 }

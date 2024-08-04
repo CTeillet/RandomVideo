@@ -11,14 +11,31 @@ builder.Services.AddRazorComponents()
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Ajouter les services nécessaires.
-builder.Configuration.AddJsonFile("appsettings.json");
+// Ajouter un HttpClient avec une base URL définie dans la configuration
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseUrl"]) });
-builder.Services.AddSingleton<IVideoThumbnailGenerator>(provider =>
-    new VideoThumbnailGenerator());
-builder.Services.AddSingleton<IListVideo>(provider =>
-    new ListVideo(builder.Configuration["PathVideoDirectory"],builder.Configuration["PathThumbnailDirectory"] ));
 
+// Ajouter le service IVideoDirectoryProvider
+builder.Services.AddSingleton<IVideoDirectoryProvider, VideoDirectoryProvider>();
+
+// Ajouter le service IVideoThumbnailGenerator
+builder.Services.AddSingleton<IVideoThumbnailGenerator>(provider =>
+    new VideoThumbnailGenerator(provider.GetRequiredService<ILogger<VideoThumbnailGenerator>>()));
+
+// Ajouter le service IListVideo
+builder.Services.AddSingleton<IListVideo>(provider =>
+{
+    var videoDirectoryProvider = provider.GetRequiredService<IVideoDirectoryProvider>();
+    var logger = provider.GetRequiredService<ILogger<ListVideo>>();
+    var thumbnailDirectory = builder.Configuration["PathThumbnailDirectory"];
+    return new ListVideo(videoDirectoryProvider.GetVideoDirectory(), thumbnailDirectory, logger);
+});
+
+// Ajouter le service IVideoService
+builder.Services.AddSingleton<IVideoService, VideoService>();
+
+// Configure les services de journalisation
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+builder.Logging.AddConsole(); // Ajoute le logger console
 
 var app = builder.Build();
 

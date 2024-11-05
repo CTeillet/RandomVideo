@@ -21,7 +21,7 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
 
     public async Task GenerateThumbnailsAsync(List<Video> videos)
     {
-        var channel = Channel.CreateBounded<Video>(new BoundedChannelOptions(10)
+        var channel = Channel.CreateBounded<Video>(new BoundedChannelOptions(100) // Capacité augmentée
         {
             SingleWriter = false,
             SingleReader = false
@@ -37,11 +37,21 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
             channel.Writer.Complete();
         });
 
-        var consumers = Enumerable.Range(0, 5).Select(_ => Task.Run(async () =>
+        // Augmentation du nombre de consommateurs
+        var consumerCount = Environment.ProcessorCount * 2; // Par exemple, double le nombre de cœurs
+        var consumers = Enumerable.Range(0, consumerCount).Select(_ => Task.Run(async () =>
         {
             await foreach (var video in channel.Reader.ReadAllAsync())
             {
-                await GenerateThumbnailAsync(video);
+                try
+                {
+                    await GenerateThumbnailAsync(video);
+                }
+                catch (Exception ex)
+                {
+                    // Gérer l'erreur ici (logging, retries, etc.)
+                    Console.WriteLine($"Error processing video {video.Name}: {ex.Message}");
+                }
             }
         })).ToArray();
 

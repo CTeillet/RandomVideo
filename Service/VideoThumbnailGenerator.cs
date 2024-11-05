@@ -49,8 +49,7 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
                 }
                 catch (Exception ex)
                 {
-                    // Gérer l'erreur ici (logging, retries, etc.)
-                    Console.WriteLine($"Error processing video {video.Name}: {ex.Message}");
+                    _logger.LogError(ex, "Error processing video {videoName}", video.Name);
                 }
             }
         })).ToArray();
@@ -61,8 +60,9 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
 
     private async Task GenerateThumbnailAsync(Video video)
     {
-        _logger.LogInformation("Génération de la vignette pour la vidéo : {videoName}, {videoPath}, {videoThumbnail}", video.Name, video.Path, video.Thumbnail);
-        
+        _logger.LogInformation("Génération de la vignette pour la vidéo : {videoName}, {videoPath}, {videoThumbnail}",
+            video.Name, video.Path, video.Thumbnail.Filepath);
+
         var conversion = FFmpeg.Conversions.New()
             .AddParameter($"-i \"{video.Path}\"")
             .AddParameter("-ss 00:00:05.000")
@@ -70,7 +70,7 @@ public class VideoThumbnailGenerator : IVideoThumbnailGenerator
             .SetOutput(video.Thumbnail.Filepath);
 
         await conversion.Start();
-        
+
         _logger.LogInformation("Fin de génération de la vignette pour la vidéo : {videoName}", video.Name);
     }
 }

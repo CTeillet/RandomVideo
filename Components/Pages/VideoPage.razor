@@ -10,40 +10,33 @@
     <button class="btn btn-primary" @onclick="LoadVideos">Load Videos</button>
 </div>
 
-<div class="mt-3">
-    @if (_videos.Count == 0)
+<div class="video-grid">
+    @foreach (var video in _videos)
     {
-        <p>Loading...</p>
-    }
-    else if (_videos.Count == 0)
-    {
-        <p>No videos found.</p>
-    }
-    else
-    {
-        <div class="video-grid">
-            @foreach (var video in _videos)
-            {
-                <div class="video-card">
-                    <div class="video-title">@video.Name</div>
-                    <div class="video-thumbnail">
-                        <img src="@video.Thumbnail.FilepathDisplay" @onclick='() => PlayVideo(video)' alt="@video.Name"/>
-                    </div>
-                </div>
-            }
+        <div class="video-card" @onclick='() => PlayVideo(video)'>
+            <div class="video-title">@video.Name</div>
+            <div class="video-thumbnail">
+                <img src="@video.Thumbnail.FilepathDisplay" alt="@video.Name"/>
+                <div class="tooltip">@video.Name</div>
+            </div>
         </div>
     }
 </div>
 
-<div class="mt-3">
-    @if (!string.IsNullOrEmpty(_currentVideo))
-    {
-        <video @ref="_videoPlayer" width="640" height="480" controls key="@_currentVideo">
-            <source src="@_currentVideo" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    }
-</div>
+@if (!string.IsNullOrEmpty(_currentVideo))
+{
+    <div class="video-modal" @onclick="CloseVideo">
+        <div class="video-container" @onclick:stopPropagation="true">
+            <button class="close" @onclick="CloseVideo">✖</button>
+            <button class="prev" @onclick="PreviousVideo">❮</button>
+            <video @ref="_videoPlayer" controls>
+                <source src="@_currentVideo" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <button class="next" @onclick="NextVideo">❯</button>
+        </div>
+    </div>
+}
 
 <style>
     .video-grid {
@@ -53,11 +46,17 @@
     }
 
     .video-card {
+        cursor: pointer;
         border: 1px solid #ccc;
         border-radius: 8px;
         overflow: hidden;
         text-align: center;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s; /* Ajout d'une transition */
+    }
+
+    .video-card:hover {
+        transform: scale(1.05); /* Effet de zoom au survol */
     }
 
     .video-title {
@@ -65,22 +64,113 @@
         padding: 10px;
         font-size: 16px;
         font-weight: bold;
+        height: 40px; /* Fixer la hauteur pour l'alignement */
+        overflow: hidden; /* Empêche le débordement du texte */
+        text-overflow: ellipsis; /* Ajoute "..." si le texte déborde */
+        white-space: nowrap; /* Empêche le retour à la ligne */
     }
 
     .video-thumbnail {
+        position: relative; /* Nécessaire pour positionner l'infobulle */
         padding: 10px;
     }
 
     .video-thumbnail img {
         width: 100%;
-        height: auto;
+        height: 200px; /* Hauteur fixe pour uniformiser les miniatures */
+        object-fit: cover; /* Remplit le conteneur sans déformation */
         cursor: pointer;
+        transition: transform 0.3s; /* Transition pour l'effet hover */
+    }
+
+    .video-thumbnail img:hover {
+        transform: scale(1.05); /* Effet de zoom sur l'image */
+    }
+
+    .video-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8); /* Fond gris */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000; /* S'assurer que le modal est au-dessus */
+    }
+
+    .video-container {
+        position: relative;
+    }
+
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+
+    .prev, .next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.5); /* Ajoutez un fond pour les rendre visibles */
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 1000; /* Assurez-vous qu'elles sont au-dessus d'autres éléments */
+    }
+
+    .prev, .next {
+        z-index: 1000; /* Assurez-vous que le z-index est élevé */
+    }
+
+    .prev {
+        left: 10px; /* Positionne la flèche précédente */
+    }
+
+    .next {
+        right: 10px; /* Positionne la flèche suivante */
+    }
+
+    video {
+        max-width: 100%;
+        max-height: 80vh; /* Ajustez selon vos besoins */
+    }
+
+
+    .tooltip {
+        visibility: hidden; /* Par défaut, l'infobulle est cachée */
+        width: 120px; /* Largeur de l'infobulle */
+        background-color: rgba(0, 0, 0, 0.75); /* Fond noir semi-transparent */
+        color: #fff; /* Couleur du texte */
+        text-align: center; /* Centrer le texte */
+        border-radius: 5px; /* Coins arrondis */
+        padding: 5px; /* Espacement interne */
+        position: absolute; /* Positionnement absolu */
+        z-index: 1; /* Assurer que l'infobulle est au-dessus */
+        bottom: 100%; /* Positionner au-dessus de la miniature */
+        left: 50%; /* Centrer horizontalement */
+        transform: translateX(-50%); /* Ajuster pour centrer */
+        margin-bottom: 5px; /* Espace entre l'infobulle et la miniature */
+    }
+
+    .video-thumbnail:hover .tooltip {
+        visibility: visible; /* Afficher l'infobulle au survol */
     }
 </style>
 
 @code {
     private List<Video> _videos = [];
     private string _currentVideo = "";
+    private int _currentVideoIndex;
     private ElementReference _videoPlayer;
 
     [Inject] private HttpClient HttpClient { get; set; }
@@ -96,14 +186,36 @@
     {
         Console.WriteLine("Chargement des vidéos");
         var response = await HttpClient.GetFromJsonAsync<List<Video>>("/api/video");
-        _videos = response ?? [];
+        _videos = response ?? new List<Video>();
     }
 
     private async Task PlayVideo(Video video)
     {
         _currentVideo = $"/api/video/{Uri.EscapeDataString(video.Name)}";
+        _currentVideoIndex = _videos.IndexOf(video); // Stocke l'index de la vidéo en cours
         await Task.Delay(50);
+    }
+
+    private void CloseVideo()
+    {
+        _currentVideo = string.Empty; // Réinitialiser pour fermer le modal
+    }
+
+    private async void PreviousVideo()
+    {
+        Console.WriteLine("Vidéo précédente");
+        _currentVideoIndex--;
+        _currentVideo = $"/api/video/{Uri.EscapeDataString(_videos[_currentVideoIndex].Name)}";
         await JSRuntime.InvokeVoidAsync("reloadVideo", _videoPlayer);
+    }
+
+    private async void NextVideo()
+    {
+        Console.WriteLine("Vidéo suivante");
+        _currentVideoIndex++;
+        _currentVideo = $"/api/video/{Uri.EscapeDataString(_videos[_currentVideoIndex].Name)}";
+        await JSRuntime.InvokeVoidAsync("reloadVideo", _videoPlayer);
+
     }
 
 }

@@ -11,7 +11,7 @@ public class VideoService(
     public List<Video> GetVideoAndCreateThumbnails()
     {
         var videos = listVideo.GetVideos();
-        var videosWithoutThumbnails = videos.Where(video => !System.IO.File.Exists(video.Thumbnail.Filepath)).ToList();
+        var videosWithoutThumbnails = videos.Where(video => !File.Exists(video.Thumbnail.Filepath)).ToList();
         thumbnailGenerator.GenerateThumbnailsAsync(videosWithoutThumbnails);
         return videos;
     }
@@ -20,7 +20,7 @@ public class VideoService(
     {
         logger.LogInformation("Lancement de la vidéo : {filename}", fileName);
         var filePath = Path.Combine(videoDirectoryProvider.GetVideoDirectory(), fileName);
-        if (!System.IO.File.Exists(filePath))
+        if (!File.Exists(filePath))
         {
             throw new FileNotFoundException("Le fichier vidéo n'a pas été trouvé.", fileName);
         }

@@ -8,8 +8,8 @@
 
 <div>
     <button class="btn btn-primary" @onclick="LoadVideos">Load Videos</button>
+    <button class="btn btn-primary" @onclick="PlayRandomVideo">Play Random Video</button>
 </div>
-
 <div class="video-grid">
     @foreach (var video in _videos)
     {
@@ -33,6 +33,7 @@
                 <source src="@_currentVideo" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
+
             <button class="next" @onclick="NextVideo">❯</button>
         </div>
     </div>
@@ -216,6 +217,23 @@
         _currentVideo = $"/api/video/{Uri.EscapeDataString(_videos[_currentVideoIndex].Name)}";
         await JSRuntime.InvokeVoidAsync("reloadVideo", _videoPlayer);
 
+    }
+    
+    private async Task PlayRandomVideo()
+    {
+        if (!_videos.Any())
+        {
+            return;
+        }
+
+        var random = new Random();
+        var randomIndex = random.Next(_videos.Count);
+        var randomVideo = _videos[randomIndex];
+
+        _currentVideo = $"/api/video/{Uri.EscapeDataString(randomVideo.Name)}";
+        _currentVideoIndex = randomIndex;
+
+        await Task.Delay(50); // Petite pause pour forcer la mise à jour de l'UI si besoin
     }
 
 }
